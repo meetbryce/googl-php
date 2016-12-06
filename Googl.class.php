@@ -64,11 +64,25 @@ class Googl
 		curl_setopt($this->ch, CURLOPT_POST, count($data));
 		curl_setopt($this->ch, CURLOPT_POSTFIELDS, $data_string);
 		curl_setopt($this->ch, CURLOPT_HTTPHEADER, Array('Content-Type: application/json'));
+		# enable option below error #60 occurs and you're okay with sending an unsecure request
+		# curl_setopt($this->ch, CURLOPT_SSL_VERIFYPEER, false); 
 
+		try {
+			$ret = json_decode(curl_exec($this->ch));
+			if ($ret == FALSE) {
+				throw new Exception(curl_error($this->ch), curl_errno($this->ch));
+			}
+		} catch (Exception $e) {
+			trigger_error(sprintf(
+				'Curl failed with error #%d: %s',
+				$e->getCode(), $e->getMessage()),
+				E_USER_ERROR);
+		}
+		
 		if ( $extended || $this->extended) {
-			return json_decode(curl_exec($this->ch));
+			return $ret;
 		} else {
-			$ret = json_decode(curl_exec($this->ch))->id;
+			$ret = $ret->id;
 			self::$buffer[$url] = $ret;
 			return $ret;
 		}
